@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini 3.5 Live Translate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0a0b10;
+      --card-bg: rgba(18, 20, 32, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --primary-glow: rgba(139, 92, 246, 0.4);
+      --accent: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.3);
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --font-family: 'Outfit', sans-serif;
+      --pip-font-size: 28px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Header Styling */
+    header {
+      text-align: center;
+      margin-bottom: 1rem;
+      animation: fadeInDown 0.6s ease-out;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f8fafc 30%, #8b5cf6 70%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      font-weight: 400;
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards Style */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      transition: border 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(139, 92, 246, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-main);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.75rem;
+    }
+
+    .card-title svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--primary);
+    }
+
+    /* Input Fields */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-group label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      width: 100%;
+      background: rgba(10, 11, 16, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-family: var(--font-family);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .input-wrapper input[type="password"] {
+      padding-right: 2.75rem;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem;
+    }
+
+    .toggle-password:hover {
+      color: var(--text-main);
+    }
+
+    /* Buttons */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1.5rem;
+      border-radius: 8px;
+      font-family: var(--font-family);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      outline: none;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px 0 var(--primary-glow);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px 0 var(--primary-glow);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Status Bar */
+    .status-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--text-muted);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .status-dot.idle {
+      background-color: var(--text-muted);
+      box-shadow: none;
+    }
+
+    .status-dot.connecting {
+      background-color: var(--warning);
+      box-shadow: 0 0 10px var(--warning);
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-dot.active {
+      background-color: var(--success);
+      box-shadow: 0 0 10px var(--success);
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-dot.error {
+      background-color: var(--error);
+      box-shadow: 0 0 10px var(--error);
+    }
+
+    /* Transcripts Console */
+    .console-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .clear-console-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .clear-console-btn:hover {
+      color: var(--text-main);
+    }
+
+    .console-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      height: 480px;
+      overflow-y: auto;
+      border: 1px solid var(--card-border);
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 1rem;
+      scroll-behavior: smooth;
+    }
+
+    .console-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      text-align: center;
+      gap: 0.5rem;
+    }
+
+    .console-placeholder svg {
+      width: 48px;
+      height: 48px;
+      fill: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Dialogue Log Styling */
+    .log-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-left: 3px solid var(--primary);
+      padding: 0.75rem 1rem;
+      border-radius: 0 8px 8px 0;
+      animation: slideInUp 0.3s ease-out;
+    }
+
+    .log-item.user-speech {
+      border-left-color: var(--accent);
+    }
+
+    .log-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .log-original {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .log-translated {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--text-main);
+      line-height: 1.4;
+      margin-top: 0.25rem;
+    }
+
+    /* Active Caption Panel */
+    .active-caption-panel {
+      background: rgba(139, 92, 246, 0.05);
+      border: 1px dashed rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 90px;
+    }
+
+    .active-caption-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .active-original {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .active-translated {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    /* Inline Subtitle Preview (for testing / fallback) */
+    .preview-section {
+      width: 100%;
+      border: 1px solid var(--card-border);
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-badge {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .preview-subtitles {
+      text-align: center;
+      max-width: 90%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .subtitle-line {
+      min-height: 2.2rem;
+      line-height: 1.3;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .line-1 {
+      font-size: calc(var(--pip-font-size, 28px) * 0.62);
+      color: rgba(255, 255, 255, 0.22);
+      line-height: 1.4;
+    }
+
+    .line-2 {
+      font-size: var(--pip-font-size, 28px);
+      font-weight: 700;
+      color: var(--text-main);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+      line-height: 1.4;
+    }
+
+    .line-3 {
+      font-size: calc(var(--pip-font-size, 28px) * 0.73);
+      color: rgba(255, 255, 255, 0.50);
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Subtitle Window Shared CSS Injection */
+    .pip-body {
+      background-color: rgba(10, 11, 16, 0.85) !important;
+      color: #f8fafc !important;
+      font-family: 'Outfit', -apple-system, sans-serif !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      height: 100vh !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+    }
+
+    .pip-status {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      color: #94a3b8;
+      background: rgba(0,0,0,0.4);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      z-index: 10;
+    }
+
+    .pip-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #10b981;
+    }
+
+    .pip-scroll-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      box-sizing: border-box;
+      padding: 2.5rem 1rem 1rem 1rem;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none;  /* IE and Edge */
+    }
+
+    .pip-scroll-container::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+
+    .pip-history-item {
+      font-size: calc(var(--pip-font-size, 28px) * 0.68);
+      color: rgba(255, 255, 255, 0.3);
+      text-align: center;
+      line-height: 1.4;
+      margin-bottom: 0.8rem;
+      transition: all 0.3s ease;
+    }
+
+    .pip-history-item:last-child {
+      font-size: var(--pip-font-size, 28px);
+      font-weight: 700;
+      color: #f8fafc;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .pip-active-line {
+      font-size: calc(var(--pip-font-size, 28px) * 0.73);
+      color: rgba(255, 255, 255, 0.50);
+      font-style: italic;
+      text-align: center;
+      line-height: 1.4;
+      margin-top: 0.4rem;
+      min-height: 2.0rem;
+      transition: all 0.3s ease;
+    }
+
+    /* OBS Green Screen Mode styles for PiP/Popup Window */
+    .pip-body.obs-mode {
+      background-color: #00ff00 !important;
+      background: #00ff00 !important;
+    }
+
+    .pip-body.obs-mode .pip-status {
+      display: none !important;
+    }
+
+    .pip-body.obs-mode .pip-history-item {
+      color: #ffffff !important;
+      text-shadow: 
+        -2px -2px 0 #000,  
+         2px -2px 0 #000,
+        -2px  2px 0 #000,
+         2px  2px 0 #000,
+        -1px -2px 0 #000,  
+         1px -2px 0 #000,
+        -1px  2px 0 #000,
+         1px  2px 0 #000,
+        -2px -1px 0 #000,  
+         2px -1px 0 #000,
+        -2px  1px 0 #000,
+         2px  1px 0 #000,
+         0px  3px 6px rgba(0, 0, 0, 0.9) !important;
+    }
+
+    .pip-body.obs-mode .pip-history-item:last-child {
+      color: #ffffff !important;
+    }
+
+    .pip-body.obs-mode .pip-active-line {
+      color: #ffffff !important;
+      opacity: 0.8 !important;
+      text-shadow: 
+        -2px -2px 0 #000,  
+         2px -2px 0 #000,
+        -2px  2px 0 #000,
+         2px  2px 0 #000,
+        -1px -2px 0 #000,  
+         1px -2px 0 #000,
+        -1px  2px 0 #000,
+         1px  2px 0 #000,
+        -2px -1px 0 #000,  
+         2px -1px 0 #000,
+        -2px  1px 0 #000,
+         2px  1px 0 #000,
+         0px  3px 6px rgba(0, 0, 0, 0.9) !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Gemini 3.5 Live Translate</h1>
+      <p>Real-time continuous translation of YouTube streams & browser tab audio</p>
+    </header>
+
+    <div class="dashboard-grid">
+      <!-- Left Column: Controls -->
+      <div class="card">
+        <div class="card-title">
+          <!-- Settings Icon -->
+          <svg viewBox="0 0 24 24">
+            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.13,5.91,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12c0,0.31,0.04,0.64,0.08,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+          </svg>
+          Configuration
+        </div>
+
+        <!-- API Key -->
+        <div class="input-group">
+          <label for="api-key">Gemini API Key</label>
+          <div class="input-wrapper">
+            <input type="password" id="api-key" placeholder="AIzaSy...">
+            <button class="toggle-password" id="toggle-key-visibility" title="Toggle visibility">
+              <!-- Eye Icon -->
+              <svg id="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Language Code Selector -->
+        <div class="input-group">
+          <label for="language-select">Target Language</label>
+          <div class="input-wrapper">
+            <select id="language-select">
+              <option value="zh-Hant" selected>Traditional Chinese (繁體中文)</option>
+              <option value="en">English (English)</option>
+              <option value="es">Spanish (Español)</option>
+              <option value="ja">Japanese (日本語)</option>
+              <option value="ko">Korean (한국어)</option>
+              <option value="fr">French (Français)</option>
+              <option value="custom">-- Custom Language Code --</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Custom Language Code Input (hidden by default) -->
+        <div class="input-group" id="custom-lang-group" style="display: none;">
+          <label for="custom-language">Custom BCP-47 Code</label>
+          <div class="input-wrapper">
+            <input type="text" id="custom-language" placeholder="e.g. de-DE, pt-BR">
+          </div>
+        </div>
+
+        <!-- Subtitle Font Size Selection -->
+        <div class="input-group">
+          <label for="font-size-input">Subtitle Font Size (px)</label>
+          <div class="input-wrapper">
+            <input type="number" id="font-size-input" value="28" min="12" max="72" step="1" style="width: 100%;">
+          </div>
+        </div>
+
+        <!-- Connection Settings -->
+        <div class="status-panel">
+          <span>Status:</span>
+          <div class="status-indicator">
+            <div class="status-dot idle" id="status-dot"></div>
+            <span id="status-text">Idle</span>
+          </div>
+        </div>
+
+        <!-- OBS Mode Toggle -->
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: -0.5rem; padding: 0 0.25rem;">
+          <input type="checkbox" id="obs-mode-checkbox" style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary);">
+          <label for="obs-mode-checkbox" style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer; user-select: none; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;">OBS Green Screen Mode</label>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+          <button class="btn btn-primary" id="start-btn">
+            <!-- Play Icon -->
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            Start Capture & Translate
+          </button>
+          <button class="btn btn-danger" id="stop-btn" style="display: none;">
+            <!-- Stop Icon -->
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+            Stop Translation
+          </button>
+          <button class="btn btn-secondary" id="pip-btn">
+            <!-- Overlay Icon -->
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M19 7h-8v6h8V7zm2-4H3c-1.1 0-2 .9-2 2v14c0 1.1.9 1.98 2 1.98h18c1.1 0 2-.88 2-1.98V5c0-1.1-.9-2-2-2zm0 16.01H3V4.97h18v14.04z"/>
+            </svg>
+            Open Subtitle Float Window
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Console & Subtitle Preview -->
+      <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+        
+        <!-- Live Caption Box -->
+        <div class="active-caption-panel">
+          <div class="active-caption-title">Active Speech</div>
+          <div class="active-translated" id="active-translated">Translation: [Waiting for stream...]</div>
+        </div>
+
+        <!-- Log Console -->
+        <div class="card" style="flex-grow: 1;">
+          <div class="card-title console-header">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <!-- Console Icon -->
+              <svg viewBox="0 0 24 24">
+                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4zm5 5h-4V9h4v9z"/>
+              </svg>
+              Translation History
+            </div>
+            <button class="clear-console-btn" id="clear-console-btn">Clear Log</button>
+          </div>
+
+          <div class="console-content" id="console-content">
+            <div class="console-placeholder" id="console-placeholder">
+              <svg viewBox="0 0 24 24">
+                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H3V8h18v8zM5 9h2v2H5V9zm0 4h2v2H5v-2zm12-4h2v2h-2V9zm0 4h2v2h-2v-2zm-8-4h6v2H9V9zm0 4h6v2H9v-2z"/>
+              </svg>
+              <p>No audio processed yet.</p>
+              <p style="font-size: 0.85rem; max-width: 250px;">Enter your key, start audio capture, and translation history will log here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inline Subtitle Preview (bottom layout) -->
+    <div class="preview-section">
+      <div class="preview-badge">Subtitle Style Preview</div>
+      <div class="preview-subtitles">
+        <div class="subtitle-line line-1" id="preview-l1"></div>
+        <div class="subtitle-line line-2" id="preview-l2"></div>
+        <div class="subtitle-line line-3" id="preview-l3"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State variables
+    let isTranslating = false;
+    let apiKey = '';
+    let targetLanguage = 'zh-Hant';
+    
+    let mediaStream = null;
+    let audioContext = null;
+    let scriptProcessor = null;
+    let ws = null;
+    let reconnectTimeout = null;
+    let isExplicitStop = false;
+
+    // Subtitle buffer system
+    let activeTranslation = '';
+    let translationBuffer = '';
+    let silenceTimer = null;
+
+    // Picture-in-Picture References
+    let pipWindow = null;
+
+    // DOM Elements
+    const apiKeyInput = document.getElementById('api-key');
+    const toggleKeyVisibilityBtn = document.getElementById('toggle-key-visibility');
+    const eyeIcon = document.getElementById('eye-icon');
+    const languageSelect = document.getElementById('language-select');
+    const customLangGroup = document.getElementById('custom-lang-group');
+    const customLanguageInput = document.getElementById('custom-language');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const pipBtn = document.getElementById('pip-btn');
+    const obsModeCheckbox = document.getElementById('obs-mode-checkbox');
+    const fontSizeInput = document.getElementById('font-size-input');
+    let obsModeEnabled = false;
+    let fontSize = 28; // Default in pixels
+
+    obsModeCheckbox.addEventListener('change', (e) => {
+      obsModeEnabled = e.target.checked;
+      applyObsModeToPip();
+    });
+
+    function applyObsModeToPip() {
+      if (!pipWindow || pipWindow.closed) return;
+      const body = pipWindow.document.body;
+      if (obsModeEnabled) {
+        body.classList.add('obs-mode');
+      } else {
+        body.classList.remove('obs-mode');
+      }
+    }
+
+    fontSizeInput.addEventListener('input', (e) => {
+      fontSize = parseInt(e.target.value) || 28;
+      localStorage.setItem('gemini_font_size', fontSize);
+      document.documentElement.style.setProperty('--pip-font-size', fontSize + 'px');
+      applyFontSizeToPip();
+    });
+
+    function applyFontSizeToPip() {
+      if (!pipWindow || pipWindow.closed) return;
+      const body = pipWindow.document.body;
+      body.style.setProperty('--pip-font-size', fontSize + 'px');
+    }
+    
+    const activeTranslatedEl = document.getElementById('active-translated');
+    const consoleContent = document.getElementById('console-content');
+    const consolePlaceholder = document.getElementById('console-placeholder');
+    const clearConsoleBtn = document.getElementById('clear-console-btn');
+
+    const previewL1 = document.getElementById('preview-l1');
+    const previewL2 = document.getElementById('preview-l2');
+    const previewL3 = document.getElementById('preview-l3');
+
+    // Init: Load API Key and Font Size from local storage
+    window.addEventListener('load', () => {
+      const savedKey = localStorage.getItem('gemini_api_key');
+      if (savedKey) {
+        apiKey = savedKey;
+        apiKeyInput.value = savedKey;
+      }
+      const savedSize = localStorage.getItem('gemini_font_size');
+      if (savedSize) {
+        fontSize = parseInt(savedSize);
+        fontSizeInput.value = savedSize;
+        document.documentElement.style.setProperty('--pip-font-size', savedSize + 'px');
+      }
+      checkPipSupport();
+    });
+
+    // Check Document PiP support
+    function checkPipSupport() {
+      pipBtn.disabled = false; // Always enabled because we have window.open fallback!
+      if ('documentPictureInPicture' in window) {
+        pipBtn.title = "Open floating subtitle overlay window";
+      } else {
+        pipBtn.title = "Open subtitle window (Document PiP not supported, using standard popup fallback)";
+      }
+    }
+
+    // Toggle API Key visibility
+    toggleKeyVisibilityBtn.addEventListener('click', () => {
+      if (apiKeyInput.type === 'password') {
+        apiKeyInput.type = 'text';
+        // Eye-slashed SVG
+        eyeIcon.innerHTML = `<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.82l2.92 2.92c1.51-1.26 2.7-2.89 3.44-4.74-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.34-4.3c-.61 0-1.19.1-1.74.27l1.67 1.67c.02-.01.05-.02.07-.02 1.66 0 3 1.34 3 3 0 .03-.01.05-.02.07l1.67 1.67c.17-.55.27-1.13.27-1.74 0-2.76-2.24-5-5-5z"/>`;
+      } else {
+        apiKeyInput.type = 'password';
+        // Regular Eye SVG
+        eyeIcon.innerHTML = `<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>`;
+      }
+    });
+
+    // Save API key on input change
+    apiKeyInput.addEventListener('input', (e) => {
+      apiKey = e.target.value.trim();
+      localStorage.setItem('gemini_api_key', apiKey);
+    });
+
+    // Handle Language selection
+    languageSelect.addEventListener('change', (e) => {
+      if (e.target.value === 'custom') {
+        customLangGroup.style.display = 'flex';
+        targetLanguage = customLanguageInput.value.trim();
+      } else {
+        customLangGroup.style.display = 'none';
+        targetLanguage = e.target.value;
+      }
+    });
+
+    customLanguageInput.addEventListener('input', (e) => {
+      targetLanguage = e.target.value.trim();
+    });
+
+    // Update Status Indicators
+    function updateStatus(state, message) {
+      statusDot.className = `status-dot ${state}`;
+      statusText.textContent = message;
+      
+      // Update Pip Status if it exists
+      if (pipWindow) {
+        const pipStatusDot = pipWindow.document.getElementById('pip-status-dot');
+        const pipStatusText = pipWindow.document.getElementById('pip-status-text');
+        if (pipStatusDot && pipStatusText) {
+          if (state === 'active') {
+            pipStatusDot.style.backgroundColor = 'var(--success)';
+            pipStatusText.textContent = 'Active';
+          } else if (state === 'connecting') {
+            pipStatusDot.style.backgroundColor = 'var(--warning)';
+            pipStatusText.textContent = 'Reconnecting...';
+          } else {
+            pipStatusDot.style.backgroundColor = 'var(--text-muted)';
+            pipStatusText.textContent = 'Disconnected';
+          }
+        }
+      }
+    }
+
+    // Software Linear Resampler
+    function resample(inputBuffer, fromSampleRate, toSampleRate) {
+      if (fromSampleRate === toSampleRate) return inputBuffer;
+      const ratio = fromSampleRate / toSampleRate;
+      const newLength = Math.round(inputBuffer.length / ratio);
+      const result = new Float32Array(newLength);
+      let offsetResult = 0;
+      let offsetInput = 0;
+      while (offsetResult < result.length) {
+        const nextOffsetInput = (offsetResult + 1) * ratio;
+        const indexInput = Math.floor(offsetInput);
+        const weight = offsetInput - indexInput;
+        const nextIndexInput = indexInput + 1 < inputBuffer.length ? indexInput + 1 : indexInput;
+        result[offsetResult] = inputBuffer[indexInput] * (1 - weight) + inputBuffer[nextIndexInput] * weight;
+        offsetResult++;
+        offsetInput = nextOffsetInput;
+      }
+      return result;
+    }
+
+    // Convert ArrayBuffer to Base64 String
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binary);
+    }
+
+    // Start Capture and Streaming
+    startBtn.addEventListener('click', async () => {
+      apiKey = apiKeyInput.value.trim();
+      if (!apiKey) {
+        alert('Please enter your Gemini API Key first.');
+        return;
+      }
+
+      isExplicitStop = false;
+      startBtn.disabled = true;
+      apiKeyInput.disabled = true;
+      languageSelect.disabled = true;
+      customLanguageInput.disabled = true;
+
+      try {
+        updateStatus('connecting', 'Capturing tab audio...');
+        
+        // 1. Capture screen/tab media with audio
+        mediaStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: {
+            systemAudio: 'include'
+          }
+        });
+
+        // Ensure audio track exists
+        const audioTracks = mediaStream.getAudioTracks();
+        if (audioTracks.length === 0) {
+          throw new Error('No audio stream captured. Make sure to check the "Share tab audio" box when selecting a tab.');
+        }
+
+        // Discard video tracks immediately to optimize resources
+        mediaStream.getVideoTracks().forEach(track => track.stop());
+
+        // Listen for media stream stops (e.g. user clicks browser's native "Stop sharing" button)
+        audioTracks[0].addEventListener('ended', () => {
+          if (!isExplicitStop) {
+            stopTranslation();
+          }
+        });
+
+        // 2. Set up Web Audio context for capture and downsampling
+        audioContext = new AudioContext({ sampleRate: 16000 });
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        
+        // Create standard ScriptProcessorNode running on main thread
+        scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+        
+        scriptProcessor.onaudioprocess = (event) => {
+          const inputChannel = event.inputBuffer.getChannelData(0);
+          
+          if (!ws || ws.readyState !== WebSocket.OPEN) return;
+          // Resample native rate to 16kHz
+          const resampled = resample(inputChannel, audioContext.sampleRate, 16000);
+          
+          // Convert Float32Array [-1.0, 1.0] to signed Int16 PCM little-endian
+          const pcm16 = new Int16Array(resampled.length);
+          for (let i = 0; i < resampled.length; i++) {
+            const sample = Math.max(-1, Math.min(1, resampled[i]));
+            pcm16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+          }
+
+          // Send media chunk to WebSocket
+          const base64Audio = arrayBufferToBase64(pcm16.buffer);
+          const audioPayload = {
+            realtimeInput: {
+              mediaChunks: [
+                {
+                  mimeType: "audio/pcm;rate=16000",
+                  data: base64Audio
+                }
+              ]
+            }
+          };
+          
+          try {
+            ws.send(JSON.stringify(audioPayload));
+          } catch (err) {
+            console.error('Error sending audio data chunk:', err);
+          }
+        };
+
+        source.connect(scriptProcessor);
+        scriptProcessor.connect(audioContext.destination);
+
+        // 3. Connect to the WebSocket
+        connectWebSocket();
+
+        // UI Adjustments
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'flex';
+        isTranslating = true;
+
+        // Automatically open subtitle floating window
+        if (!pipWindow) {
+          setTimeout(() => {
+            if (isTranslating && !pipWindow) {
+              pipBtn.click();
+            }
+          }, 400);
+        }
+
+      } catch (err) {
+        console.error('Failed to initialize translation stream:', err);
+        alert(err.message || 'Failed to start screen capture.');
+        cleanupAudio();
+        updateStatus('idle', 'Idle');
+        startBtn.disabled = false;
+        apiKeyInput.disabled = false;
+        languageSelect.disabled = false;
+        customLanguageInput.disabled = false;
+      }
+    });
+
+    // Establish WebSocket and manage connection lifecycle
+    function connectWebSocket() {
+      if (isExplicitStop) return;
+
+      updateStatus('connecting', 'Connecting to Gemini Live API...');
+      
+      const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        updateStatus('active', 'Translating active stream...');
+        
+        // Send initial setup configuration
+        const setupMessage = {
+          setup: {
+            model: "models/gemini-3.5-live-translate-preview",
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              translationConfig: {
+                targetLanguageCode: targetLanguage,
+                echoTargetLanguage: true
+              }
+            },
+            outputAudioTranscription: {}
+          }
+        };
+        console.log("WebSocket connection established. Sending setup payload:", setupMessage);
+        ws.send(JSON.stringify(setupMessage));
+      };
+
+      ws.onmessage = async (event) => {
+        try {
+          let textData = '';
+          if (event.data instanceof Blob) {
+            textData = await event.data.text();
+          } else if (typeof event.data === 'string') {
+            textData = event.data;
+          } else {
+            return; // Ignore ArrayBuffers
+          }
+
+          // Check if the text is JSON or raw binary bytes
+          if (!textData.trim().startsWith('{')) {
+            return; // Ignore raw audio PCM bytes
+          }
+
+          const message = JSON.parse(textData);
+          console.log("Gemini Live WebSocket Message Received:", message);
+          
+          // 1. Check inside serverContent (standard structure)
+          if (message.serverContent) {
+            const sc = message.serverContent;
+            
+            // Check for translated output transcription
+            if (sc.outputTranscription && sc.outputTranscription.text) {
+              handleTranslationChunk(sc.outputTranscription.text);
+            }
+            
+            // Fallback: Check if translation text is sent inside standard turn parts
+            if (sc.modelTurn && sc.modelTurn.parts) {
+              sc.modelTurn.parts.forEach(part => {
+                if (part.text) {
+                  handleTranslationChunk(part.text);
+                }
+              });
+            }
+
+            // Check for turn completion or interruptions
+            if (sc.turnComplete || sc.generationComplete || sc.interrupted) {
+              finalizeCurrentCaptions();
+            }
+          }
+          
+          // 2. Legacy/Alternative top-level check (fallback)
+          if (message.outputTranscription && message.outputTranscription.text) {
+            handleTranslationChunk(message.outputTranscription.text);
+          }
+        } catch (err) {
+          console.error('Failed parsing server message:', err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error('WebSocket encountered an error:', err);
+        updateStatus('error', 'Connection error');
+      };
+
+      ws.onclose = (event) => {
+        console.warn(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`);
+        
+        if (!isExplicitStop) {
+          updateStatus('connecting', 'Connection lost. Reconnecting in 3s...');
+          reconnectTimeout = setTimeout(() => {
+            connectWebSocket();
+          }, 3000);
+        } else {
+          updateStatus('idle', 'Idle');
+        }
+      };
+    }
+
+    // Stop Translation Stream
+    stopBtn.addEventListener('click', () => {
+      stopTranslation();
+    });
+
+    function stopTranslation() {
+      isExplicitStop = true;
+      isTranslating = false;
+      
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      
+      finalizeCurrentCaptions();
+      cleanupWebSocket();
+      cleanupAudio();
+      
+      // Update UI
+      stopBtn.style.display = 'none';
+      startBtn.style.display = 'flex';
+      startBtn.disabled = false;
+      apiKeyInput.disabled = false;
+      languageSelect.disabled = false;
+      if (languageSelect.value === 'custom') {
+        customLanguageInput.disabled = false;
+      }
+      updateStatus('idle', 'Idle');
+    }
+
+    // Cleanup resources
+    function cleanupWebSocket() {
+      if (ws) {
+        try {
+          ws.close();
+        } catch (e) {}
+        ws = null;
+      }
+    }
+
+    function cleanupAudio() {
+      if (scriptProcessor) {
+        try {
+          scriptProcessor.disconnect();
+        } catch (e) {}
+        scriptProcessor = null;
+      }
+      if (audioContext) {
+        try {
+          audioContext.close();
+        } catch (e) {}
+        audioContext = null;
+      }
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+    }
+
+    // Subtitle buffer updates
+    let rollingLines = []; // Stores the rolling history of last 3 completed lines
+
+    function handleTranslationChunk(chunk) {
+      resetSilenceTimer();
+      translationBuffer += chunk;
+      
+      // Look for sentence boundaries in translationBuffer: . ? ! 。 ？ ！」
+      const boundaryRegex = /([^.?!。？！]+[.?!。？！])\s*/g;
+      let match;
+      let lastIndex = 0;
+      
+      while ((match = boundaryRegex.exec(translationBuffer)) !== null) {
+        const sentence = match[1].trim();
+        if (sentence) {
+          pushToRollingLines(sentence);
+        }
+        lastIndex = boundaryRegex.lastIndex;
+      }
+      
+      // If we found completed sentences, slice them off the active buffer
+      if (lastIndex > 0) {
+        translationBuffer = translationBuffer.slice(lastIndex);
+      }
+      
+      // Hard length limit fallback if speaker doesn't stop or use punctuation
+      const maxLen = targetLanguage.startsWith('zh') ? 40 : 85;
+      while (translationBuffer.trim().length > maxLen) {
+        const text = translationBuffer.trim();
+        let splitIdx = -1;
+        
+        if (targetLanguage.startsWith('zh')) {
+          splitIdx = Math.max(text.lastIndexOf('，', maxLen), text.lastIndexOf('、', maxLen));
+          if (splitIdx < 6) splitIdx = maxLen;
+        } else {
+          splitIdx = text.lastIndexOf(' ', maxLen);
+          if (splitIdx < 15) splitIdx = maxLen;
+        }
+        
+        const completedPart = text.slice(0, splitIdx).trim();
+        const remainingPart = text.slice(splitIdx).trim();
+        
+        if (completedPart) {
+          pushToRollingLines(completedPart);
+          translationBuffer = remainingPart;
+        } else {
+          break;
+        }
+      }
+      
+      activeTranslation = translationBuffer;
+      updateUI();
+    }
+
+    let allCompletedLines = [];
+
+    function pushToRollingLines(sentence) {
+      // Log to history console
+      addToConsole(sentence);
+      
+      rollingLines.push(sentence);
+      if (rollingLines.length > 3) {
+        rollingLines.shift(); // Keep only last 3 lines
+      }
+
+      allCompletedLines.push(sentence);
+      if (allCompletedLines.length > 200) {
+        allCompletedLines.shift(); // Limit history to prevent bloat
+      }
+
+      appendSentenceToPip(sentence);
+    }
+
+    function appendSentenceToPip(sentence) {
+      if (!pipWindow || pipWindow.closed) return;
+      const historyList = pipWindow.document.getElementById('pip-history-list');
+      const container = pipWindow.document.getElementById('pip-scroll-container');
+      if (!historyList || !container) return;
+
+      const threshold = 30;
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + threshold;
+
+      const newItem = pipWindow.document.createElement('div');
+      newItem.className = 'pip-history-item';
+      newItem.textContent = sentence;
+      historyList.appendChild(newItem);
+
+      if (isAtBottom) {
+        setTimeout(() => {
+          container.scrollTop = container.scrollHeight;
+        }, 10);
+      }
+    }
+
+    function resetSilenceTimer() {
+      if (silenceTimer) clearTimeout(silenceTimer);
+      // Auto-finalize caption turn after 7 seconds of complete silence
+      silenceTimer = setTimeout(() => {
+        finalizeCurrentCaptions();
+      }, 7000);
+    }
+
+    function finalizeCurrentCaptions() {
+      const trans = translationBuffer.trim();
+      if (trans) {
+        pushToRollingLines(trans);
+        translationBuffer = '';
+        activeTranslation = '';
+        updateUI();
+      }
+    }
+
+    function updateUI() {
+      // Determine what to show in the 3 rolling slots
+      let displayLines = [];
+
+      // Line 1: completed sentence before the last one
+      // Line 2: the last completed sentence (spotlight)
+      // Line 3: current active speech (in-progress)
+      const histLen = rollingLines.length;
+      
+      if (histLen >= 2) {
+        displayLines.push(rollingLines[histLen - 2]);
+        displayLines.push(rollingLines[histLen - 1]);
+      } else if (histLen === 1) {
+        displayLines.push("");
+        displayLines.push(rollingLines[0]);
+      } else {
+        displayLines.push("");
+        displayLines.push("");
+      }
+      
+      // Line 3 is the active translation in progress (empty if silent)
+      displayLines.push(activeTranslation || "");
+
+      // 1. Dashboard active block
+      activeTranslatedEl.textContent = displayLines[1] || activeTranslation || 'Waiting for speech...';
+
+      // 2. Inline preview
+      previewL1.textContent = displayLines[0];
+      previewL2.textContent = displayLines[1] || (displayLines[2] ? "" : "Waiting for subtitles...");
+      previewL3.textContent = displayLines[2];
+
+      // 3. Float window (Document Picture-in-Picture or fallback window)
+      if (pipWindow && !pipWindow.closed) {
+        const activeLine = pipWindow.document.getElementById('pip-active-line');
+        const container = pipWindow.document.getElementById('pip-scroll-container');
+        if (activeLine && container) {
+          const threshold = 30;
+          const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + threshold;
+          
+          activeLine.textContent = displayLines[2] || (displayLines[1] ? "" : "Waiting for subtitles...");
+          
+          if (isAtBottom) {
+            container.scrollTop = container.scrollHeight;
+          }
+        }
+      }
+    }
+
+    // Add elements to local console history log
+    function addToConsole(translated) {
+      // Remove placeholder
+      if (consolePlaceholder) {
+        consolePlaceholder.style.display = 'none';
+      }
+
+      const logItem = document.createElement('div');
+      logItem.className = 'log-item';
+      
+      const timeStr = new Date().toLocaleTimeString();
+      
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'log-time';
+      timeDiv.textContent = timeStr;
+      
+      const transDiv = document.createElement('div');
+      transDiv.className = 'log-translated';
+      transDiv.textContent = translated || '(No Translation)';
+      
+      logItem.appendChild(timeDiv);
+      logItem.appendChild(transDiv);
+      
+      consoleContent.appendChild(logItem);
+      consoleContent.scrollTop = consoleContent.scrollHeight;
+    }
+
+    clearConsoleBtn.addEventListener('click', () => {
+      // Clear console items
+      const items = consoleContent.querySelectorAll('.log-item');
+      items.forEach(el => el.remove());
+      
+      // Restore placeholder
+      if (consolePlaceholder) {
+        consolePlaceholder.style.display = 'flex';
+      }
+      
+      rollingLines = [];
+      allCompletedLines = [];
+      
+      // Clear history in PiP if open
+      if (pipWindow && !pipWindow.closed) {
+        const historyList = pipWindow.document.getElementById('pip-history-list');
+        const activeLine = pipWindow.document.getElementById('pip-active-line');
+        if (historyList) historyList.innerHTML = '';
+        if (activeLine) activeLine.textContent = 'Waiting for subtitles...';
+      }
+      
+      updateUI();
+    });
+
+    // Spawning Picture-in-Picture or Popup Fallback Window
+    pipBtn.addEventListener('click', async () => {
+      // Close existing if open
+      if (pipWindow) {
+        pipWindow.close();
+        pipWindow = null;
+        updatePipButtonState(false);
+        return;
+      }
+
+      try {
+        if ('documentPictureInPicture' in window) {
+          // Standard always-on-top PiP window
+          pipWindow = await documentPictureInPicture.requestWindow({
+            width: 800,
+            height: 240
+          });
+        } else {
+          // Fallback browser window
+          pipWindow = window.open("", "Subtitles", "width=800,height=240,menubar=no,status=no,titlebar=no,toolbar=no,location=no");
+          if (!pipWindow) {
+            alert("Pop-up window was blocked! Please allow pop-ups for this page in your browser settings to show subtitles.");
+            return;
+          }
+        }
+
+        // Set page title for PiP/Popup
+        pipWindow.document.title = "Subtitles overlay";
+
+        // Setup the HTML document body
+        const body = pipWindow.document.body;
+        body.className = "pip-body" + (obsModeEnabled ? " obs-mode" : "");
+        body.style.setProperty('--pip-font-size', fontSize + 'px');
+
+        // Inject container element structure
+        body.innerHTML = `
+          <div class="pip-status">
+            <div class="pip-status-dot" id="pip-status-dot" style="background-color: ${ws && ws.readyState === WebSocket.OPEN ? '#10b981' : '#f59e0b'}"></div>
+            <span id="pip-status-text">${ws && ws.readyState === WebSocket.OPEN ? 'Active' : 'Disconnected'}</span>
+          </div>
+          <div id="pip-scroll-container" class="pip-scroll-container">
+            <div id="pip-history-list"></div>
+            <div id="pip-active-line" class="pip-active-line"></div>
+          </div>
+        `;
+
+        // Populate history list using textContent for security
+        const historyList = pipWindow.document.getElementById('pip-history-list');
+        if (historyList) {
+          allCompletedLines.forEach(line => {
+            const item = pipWindow.document.createElement('div');
+            item.className = 'pip-history-item';
+            item.textContent = line;
+            historyList.appendChild(item);
+          });
+        }
+
+        // Populate active line using textContent for security
+        const activeLine = pipWindow.document.getElementById('pip-active-line');
+        if (activeLine) {
+          activeLine.textContent = activeTranslation || (allCompletedLines.length === 0 ? 'Waiting for subtitles...' : '');
+        }
+
+        // Auto-scroll to bottom of PiP container initially
+        setTimeout(() => {
+          const container = pipWindow.document.getElementById('pip-scroll-container');
+          if (container) {
+            container.scrollTop = container.scrollHeight;
+          }
+        }, 50);
+
+        // Inject Stylesheet rules from parent document to ensure styling matches
+        Array.from(document.styleSheets).forEach((sheet) => {
+          try {
+            if (sheet.cssRules) {
+              const newStyle = pipWindow.document.createElement('style');
+              Array.from(sheet.cssRules).forEach((rule) => {
+                newStyle.appendChild(pipWindow.document.createTextNode(rule.cssText));
+              });
+              pipWindow.document.head.appendChild(newStyle);
+            }
+          } catch (e) {
+            console.warn("Could not copy stylesheet rules", e);
+          }
+        });
+
+        // Also dynamically add Google Fonts link to PiP window
+        const fontLink1 = pipWindow.document.createElement('link');
+        fontLink1.rel = 'preconnect';
+        fontLink1.href = 'https://fonts.googleapis.com';
+        pipWindow.document.head.appendChild(fontLink1);
+
+        const fontLink2 = pipWindow.document.createElement('link');
+        fontLink2.rel = 'preconnect';
+        fontLink2.href = 'https://fonts.gstatic.com';
+        fontLink2.crossOrigin = 'anonymous';
+        pipWindow.document.head.appendChild(fontLink2);
+
+        const fontLink3 = pipWindow.document.createElement('link');
+        fontLink3.rel = 'stylesheet';
+        fontLink3.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap';
+        pipWindow.document.head.appendChild(fontLink3);
+
+        // Sync visual UI elements
+        updateUI();
+        updatePipButtonState(true);
+
+        // Watch for close event
+        if ('documentPictureInPicture' in window) {
+          pipWindow.addEventListener('pagehide', () => {
+            pipWindow = null;
+            updatePipButtonState(false);
+          });
+        } else {
+          pipWindow.onbeforeunload = () => {
+            pipWindow = null;
+            updatePipButtonState(false);
+          };
+        }
+
+      } catch (err) {
+        console.error('Failed to open subtitles window:', err);
+        alert('Could not open subtitles window. Make sure pop-ups are allowed.');
+      }
+    });
+
+    function updatePipButtonState(isOpen) {
+      if (isOpen) {
+        pipBtn.textContent = "Close Subtitle Float Window";
+        pipBtn.classList.replace('btn-secondary', 'btn-primary');
+      } else {
+        pipBtn.textContent = "Open Subtitle Float Window";
+        pipBtn.classList.replace('btn-primary', 'btn-secondary');
+      }
+    }
+
+  </script>
+</body>
+</html>
