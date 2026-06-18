@@ -162,4 +162,4 @@ bun run build
 
 ## License
 
-No license has been declared for this project.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
