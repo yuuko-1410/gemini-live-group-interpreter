@@ -18,6 +18,7 @@ const LIVE_WEBSOCKET_BASE_URL =
   "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
 
 type GeminiLiveMessage = {
+  setupComplete?: Record<string, unknown>;
   serverContent?: {
     inputTranscription?: {
       text?: string;
@@ -79,12 +80,29 @@ export function createGeminiLiveTranslateFactory(): LiveTranslateFactory {
       const socket = await connectGeminiLiveWebSocket(url, LIVE_CONNECT_TIMEOUT_MS, proxyUrl);
       logGemini("opened", { targetLanguage });
 
+      let markSetupComplete: (() => void) | undefined;
+      const setupComplete = new Promise<void>((resolve) => {
+        markSetupComplete = resolve;
+      });
+
       socket.onMessage((data) => {
         lastServerMessageAt = Date.now();
         const message = parseGeminiLiveMessage(data);
-        if (!message) return;
+        if (!message) {
+          logGemini("server_message_parse_failed", {
+            targetLanguage,
+            bytes: data.length,
+            preview: redactSensitiveUrlParts(data).slice(0, 300),
+          });
+          return;
+        }
         serverMessageCount += 1;
         logGeminiServerMessage(message, targetLanguage, serverMessageCount);
+
+        if (message.setupComplete) {
+          logGemini("setup_complete", { targetLanguage });
+          markSetupComplete?.();
+        }
 
         const content = message.serverContent;
         const sourceText = content?.inputTranscription?.text;
@@ -150,6 +168,12 @@ export function createGeminiLiveTranslateFactory(): LiveTranslateFactory {
       });
 
       socket.send(JSON.stringify(createSetupMessage(targetLanguage)));
+      logGemini("setup_sent", { targetLanguage });
+      await withTimeout(
+        setupComplete,
+        LIVE_CONNECT_TIMEOUT_MS,
+        `gemini_live_setup_timeout_${LIVE_CONNECT_TIMEOUT_MS}ms`,
+      );
 
       return {
         async sendAudio(audio: Uint8Array) {
@@ -304,8 +328,22 @@ class NativeGeminiLiveSocket implements GeminiLiveSocket {
   }
 
   onMessage(listener: (data: string) => void): void {
-    this.socket.addEventListener("message", (event) => {
-      if (typeof event.data === "string") listener(event.data);
+    this.socket.addEventListener("message", async (event) => {
+      if (typeof event.data === "string") {
+        listener(event.data);
+        return;
+      }
+      if (event.data instanceof ArrayBuffer) {
+        listener(Buffer.from(event.data).toString("utf8"));
+        return;
+      }
+      if (event.data instanceof Uint8Array) {
+        listener(Buffer.from(event.data).toString("utf8"));
+        return;
+      }
+      if (event.data instanceof Blob) {
+        listener(await event.data.text());
+      }
     });
   }
 
