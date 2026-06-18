@@ -61,6 +61,7 @@ Common optional variables:
 
 | Variable | Default | Description |
 | --- | --- | --- |
+| `HOST` | `0.0.0.0` | Backend bind host. Use `0.0.0.0` for remote access. |
 | `PORT` | `3000` | Production backend port. |
 | `API_PORT` | `18080` | API port used by `bun run start:local`. |
 | `WEB_PORT` | `18081` | Vite dev server port used by `bun run start:local`. |
@@ -113,7 +114,7 @@ bun run build
 Start the backend:
 
 ```bash
-PORT=3000 GEMINI_API_KEY=your_key_here bun run start
+HOST=0.0.0.0 PORT=3000 GEMINI_API_KEY=your_key_here bun run start
 ```
 
 In production, the backend serves:
